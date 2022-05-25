@@ -20,24 +20,9 @@ async function main() {
   mainMenu(rl);
 }
 
-async function initContracts() {
-  const contractFactory = await ethers.getContractFactory("Lottery");
-  contract = await contractFactory.deploy(
-    "LotteryToken",
-    "LT0",
-    1,
-    ethers.utils.parseEther(BET_PRICE.toFixed(18)),
-    ethers.utils.parseEther(BET_FEE.toFixed(18))
-  );
-  await contract.deployed();
-  const tokenAddress = await contract.paymentToken();
-  const tokenFactory = await ethers.getContractFactory("LotteryToken");
-  token = tokenFactory.attach(tokenAddress);
-}
+async function initContracts() {}
 
-async function initAccounts() {
-  accounts = await ethers.getSigners();
-}
+async function initAccounts() {}
 
 async function mainMenu(rl: readline.Interface) {
   menuOptions(rl);
@@ -104,7 +89,6 @@ function menuOptions(rl: readline.Interface) {
             console.log({ error });
           }
           mainMenu(rl);
-          mainMenu(rl);
           break;
         case 6:
           rl.question("What account (index) to use?\n", async (index) => {
@@ -163,113 +147,31 @@ function menuOptions(rl: readline.Interface) {
   );
 }
 
-async function checkState() {
-  const state = await contract.betsOpen();
-  console.log(`The lottery is ${state ? "open" : "closed"}\n`);
-  const currentBlock = await ethers.provider.getBlock("latest");
-  if (!state) return;
-  const currentBlockDate = new Date(currentBlock.timestamp * 1000);
-  const closingTime = await contract.betsClosingTime();
-  const closingTimeDate = new Date(closingTime.toNumber() * 1000);
-  console.log(
-    `The last block was minted at ${currentBlockDate.toLocaleDateString()} : ${currentBlockDate.toLocaleTimeString()}\n`
-  );
-  console.log(
-    `lottery should close at  ${closingTimeDate.toLocaleDateString()} : ${closingTimeDate.toLocaleTimeString()}\n`
-  );
-}
+async function checkState() {}
 
-async function openBets(duration: string) {
-  const currentBlock = await ethers.provider.getBlock("latest");
-  const tx = await contract.openBets(currentBlock.timestamp + Number(duration));
-  const receipt = await tx.wait();
-  console.log(`Bets open (${receipt.transactionHash})\n`);
-}
+async function openBets(duration: string) {}
 
-async function displayBalance(index: string) {
-  const balanceBN = await ethers.provider.getBalance(
-    accounts[Number(index)].address
-  );
-  const balance = ethers.utils.formatEther(balanceBN);
-  console.log(
-    `The account of address ${
-      accounts[Number(index)].address
-    } has ${balance} ETH\n`
-  );
-}
+async function displayBalance(index: string) {}
 
-async function buyTokens(index: string, amount: string) {
-  const tx = await contract.connect(accounts[Number(index)]).purchaseTokens({
-    value: ethers.utils.parseEther(amount),
-  });
-  const receipt = await tx.wait();
-  console.log(`Tokens bought (${receipt.transactionHash})\n`);
-}
+async function buyTokens(index: string, amount: string) {}
 
-async function displayTokenBalance(index: string) {
-  const balanceBN = await token.balanceOf(accounts[Number(index)].address);
-  const balance = ethers.utils.formatEther(balanceBN);
-  console.log(
-    `The account of address ${
-      accounts[Number(index)].address
-    } has ${balance} Tokens\n`
-  );
-}
+async function displayTokenBalance(index: string) {}
 
-async function bet(index: string, amount: string) {
-  const allowTx = await token
-    .connect(accounts[Number(index)])
-    .approve(contract.address, ethers.constants.MaxUint256);
-  await allowTx.wait();
-  const tx = await contract.connect(accounts[Number(index)]).betMany(amount);
-  const receipt = await tx.wait();
-  console.log(`Bets placed (${receipt.transactionHash})\n`);
-}
+async function bet(index: string, amount: string) {}
 
-async function closeLottery() {
-  const tx = await contract.closeLottery();
-  const receipt = await tx.wait();
-  console.log(`Bets closed (${receipt.transactionHash})\n`);
-}
+async function closeLottery() {}
 
 async function displayPrize(index: string): Promise<string> {
-  const prizeBN = await contract.prize(accounts[Number(index)].address);
-  const prize = ethers.utils.formatEther(prizeBN);
-  console.log(
-    `The account of address ${
-      accounts[Number(index)].address
-    } has earned a prize of ${prize} Tokens\n`
-  );
-  return prize;
+  return "";
 }
 
-async function claimPrize(index: string, amount: string) {
-  const tx = await contract
-    .connect(accounts[Number(index)])
-    .prizeWithdraw(ethers.utils.parseEther(amount));
-  const receipt = await tx.wait();
-  console.log(`Prize claimed (${receipt.transactionHash})\n`);
-}
+async function claimPrize(index: string, amount: string) {}
 
-async function displayOwnerPool() {
-  const balanceBN = await contract.ownerPool();
-  const balance = ethers.utils.formatEther(balanceBN);
-  console.log(`The owner pool has (${balance}) Tokens \n`);
-}
+async function displayOwnerPool() {}
 
-async function withdrawTokens(amount: string) {
-  const tx = await contract.ownerWithdraw(ethers.utils.parseEther(amount));
-  const receipt = await tx.wait();
-  console.log(`Withdraw confirmed (${receipt.transactionHash})\n`);
-}
+async function withdrawTokens(amount: string) {}
 
-async function burnTokens(index: string, amount: string) {
-  const tx = await contract
-    .connect(accounts[Number(index)])
-    .returnTokens(ethers.utils.parseEther(amount));
-  const receipt = await tx.wait();
-  console.log(`Burn confirmed (${receipt.transactionHash})\n`);
-}
+async function burnTokens(index: string, amount: string) {}
 
 main().catch((error) => {
   console.error(error);

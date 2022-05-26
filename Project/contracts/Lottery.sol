@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {LotteryToken} from "./Token.sol";
 
@@ -52,31 +51,6 @@ contract Lottery is Ownable {
         betFee = _betFee;
     }
 
-    /// @notice Give tokens based on the amount of ETH sent
-    function purchaseTokens() public payable {
-        paymentToken.mint(msg.sender, msg.value / purchaseRatio);
-    }
-
-    /// @notice Burn `a` tokens and give the equivalent ETH back to user
-    function returnTokens(uint256 amount) public {
-        paymentToken.burnFrom(msg.sender, amount);
-        payable(msg.sender).transfer(amount * purchaseRatio);
-    }
-
-    /// @notice Withdraw `a` from that accounts prize pool
-    function prizeWithdraw(uint256 amount) public{
-        require(amount <= prize[msg.sender], "Not enough prize");
-        prize[msg.sender] -= amount;
-        paymentToken.transfer(msg.sender, amount);
-    }
-
-    /// @notice Withdraw `a` from the owner pool
-    function ownerWithdraw(uint256 amount) public onlyOwner {
-        require(amount <= ownerPool, "Not enough fees collected");
-        ownerPool -= amount;
-        paymentToken.transfer(msg.sender, amount);
-    }
-
     /// @notice Passes when the lottery is at closed state
     modifier whenBetsClosed() {
         require(!betsOpen, "Lottery is open");
@@ -102,13 +76,9 @@ contract Lottery is Ownable {
         betsOpen = true;
     }
 
-    /// @notice Call the bet function `t` times
-    function betMany(uint256 times) public {
-        require(times > 0);
-        while (times > 0) {
-            bet();
-            times--;
-        }
+    /// @notice Give tokens based on the amount of ETH sent
+    function purchaseTokens() public payable {
+        paymentToken.mint(msg.sender, msg.value / purchaseRatio);
     }
 
     /// @notice Charge the bet price and create a new bet slot with the sender address
@@ -117,6 +87,15 @@ contract Lottery is Ownable {
         ownerPool += betFee;
         prizePool += betPrice;
         _slots.push(msg.sender);
+    }
+
+    /// @notice Call the bet function `times` times
+    function betMany(uint256 times) public {
+        require(times > 0);
+        while (times > 0) {
+            bet();
+            times--;
+        }
     }
 
     /// @notice Close the lottery and calculates the prize, if any
@@ -142,5 +121,25 @@ contract Lottery is Ownable {
         returns (uint256 notQuiteRandomNumber)
     {
         notQuiteRandomNumber = uint256(blockhash(block.number - 1));
+    }
+
+    /// @notice Withdraw `amount` from that accounts prize pool
+    function prizeWithdraw(uint256 amount) public{
+        require(amount <= prize[msg.sender], "Not enough prize");
+        prize[msg.sender] -= amount;
+        paymentToken.transfer(msg.sender, amount);
+    }
+
+    /// @notice Withdraw `amount` from the owner pool
+    function ownerWithdraw(uint256 amount) public onlyOwner {
+        require(amount <= ownerPool, "Not enough fees collected");
+        ownerPool -= amount;
+        paymentToken.transfer(msg.sender, amount);
+    }
+
+    /// @notice Burn `amount` tokens and give the equivalent ETH back to user
+    function returnTokens(uint256 amount) public {
+        paymentToken.burnFrom(msg.sender, amount);
+        payable(msg.sender).transfer(amount * purchaseRatio);
     }
 }

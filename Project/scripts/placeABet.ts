@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
 import * as readline from "readline";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+// eslint-disable-next-line node/no-missing-import
 import { Lottery, LotteryToken } from "../typechain";
 
 let contract: Lottery;
@@ -85,7 +86,7 @@ function menuOptions(rl: readline.Interface) {
         case 4:
           rl.question("What account (index) to use?\n", async (index) => {
             await displayTokenBalance(index);
-            rl.question("Buy how many times?\n", async (amount) => {
+            rl.question("Bet how many times?\n", async (amount) => {
               try {
                 await bet(index, amount);
               } catch (error) {
@@ -103,7 +104,6 @@ function menuOptions(rl: readline.Interface) {
             console.log("error\n");
             console.log({ error });
           }
-          mainMenu(rl);
           mainMenu(rl);
           break;
         case 6:
@@ -166,13 +166,13 @@ function menuOptions(rl: readline.Interface) {
 async function checkState() {
   const state = await contract.betsOpen();
   console.log(`The lottery is ${state ? "open" : "closed"}\n`);
-  const currentBlock = await ethers.provider.getBlock("latest");
   if (!state) return;
+  const currentBlock = await ethers.provider.getBlock("latest");
   const currentBlockDate = new Date(currentBlock.timestamp * 1000);
   const closingTime = await contract.betsClosingTime();
   const closingTimeDate = new Date(closingTime.toNumber() * 1000);
   console.log(
-    `The last block was minted at ${currentBlockDate.toLocaleDateString()} : ${currentBlockDate.toLocaleTimeString()}\n`
+    `The last block was mined at ${currentBlockDate.toLocaleDateString()} : ${currentBlockDate.toLocaleTimeString()}\n`
   );
   console.log(
     `lottery should close at  ${closingTimeDate.toLocaleDateString()} : ${closingTimeDate.toLocaleTimeString()}\n`
@@ -183,7 +183,7 @@ async function openBets(duration: string) {
   const currentBlock = await ethers.provider.getBlock("latest");
   const tx = await contract.openBets(currentBlock.timestamp + Number(duration));
   const receipt = await tx.wait();
-  console.log(`Bets open (${receipt.transactionHash})\n`);
+  console.log(`Bets opened (${receipt.transactionHash})`);
 }
 
 async function displayBalance(index: string) {

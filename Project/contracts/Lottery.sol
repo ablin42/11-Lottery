@@ -13,20 +13,28 @@ contract Lottery is Ownable {
     /// @notice Address of the token used as payment for the bets
     LotteryToken public paymentToken;
     /// @notice Amount of ETH charged per Token purchased
+    /// @return `purchaseRatio` in wei
     uint256 public purchaseRatio;
     /// @notice Amount of tokens required for placing a bet that goes for the prize pool
+    /// @return `betPrice` in wei
     uint256 public betPrice;
     /// @notice Amount of tokens required for placing a bet that goes for the owner pool
+    /// @return `betFee` in wei
     uint256 public betFee;
     /// @notice Amount of tokens in the prize pool
+    /// @return `prizePool` in wei
     uint256 public prizePool;
     /// @notice Amount of tokens in the owner pool
+    /// @return `ownerPool` in wei
     uint256 public ownerPool;
     /// @notice Flag indicating if the lottery is open for bets
+    /// @return `betsOpen` boolean
     bool public betsOpen;
     /// @notice Timestamp of the lottery next closing date
+    /// @return `betsClosingTime` timestamp 
     uint256 public betsClosingTime;
     /// @notice Mapping of prize available for withdraw for each account
+    /// @return `prize` won by `address`
     mapping(address => uint256) public prize;
 
     /// @dev List of bet slots
@@ -67,6 +75,7 @@ contract Lottery is Ownable {
     }
 
     /// @notice Open the lottery for receiving bets
+    /// @param closingTime timestamp for the bets' closing time
     function openBets(uint256 closingTime) public onlyOwner whenBetsClosed {
         require(
             closingTime > block.timestamp,
@@ -76,7 +85,7 @@ contract Lottery is Ownable {
         betsOpen = true;
     }
 
-    /// @notice Give tokens based on the amount of ETH sent
+    /// @notice Give tokens based on the amount of ETH sent, uses `msg.value` divided by `purchaseRatio`
     function purchaseTokens() public payable {
         paymentToken.mint(msg.sender, msg.value / purchaseRatio);
     }
@@ -90,6 +99,7 @@ contract Lottery is Ownable {
     }
 
     /// @notice Call the bet function `times` times
+    /// @param times number of bets that should be made by sender
     function betMany(uint256 times) public {
         require(times > 0);
         while (times > 0) {
@@ -115,6 +125,7 @@ contract Lottery is Ownable {
 
     /// @notice Get a random number calculated from the block hash of last block
     /// @dev This number could be exploited by miners
+    /// @return notQuiteRandomNumber pseudo random number
     function getRandomNumber()
         public
         view
@@ -123,21 +134,24 @@ contract Lottery is Ownable {
         notQuiteRandomNumber = uint256(blockhash(block.number - 1));
     }
 
-    /// @notice Withdraw `amount` from that accounts prize pool
+    /// @notice Withdraw from that accounts prize pool
+    /// @param amount to be withdrawn by sender
     function prizeWithdraw(uint256 amount) public{
         require(amount <= prize[msg.sender], "Not enough prize");
         prize[msg.sender] -= amount;
         paymentToken.transfer(msg.sender, amount);
     }
 
-    /// @notice Withdraw `amount` from the owner pool
+    /// @notice Withdraw from the owner pool
+    /// @param amount to be withdraw by owner
     function ownerWithdraw(uint256 amount) public onlyOwner {
         require(amount <= ownerPool, "Not enough fees collected");
         ownerPool -= amount;
         paymentToken.transfer(msg.sender, amount);
     }
 
-    /// @notice Burn `amount` tokens and give the equivalent ETH back to user
+    /// @notice Burn tokens and give the equivalent ETH back to user
+    /// @param amount to be burnt by sender
     function returnTokens(uint256 amount) public {
         paymentToken.burnFrom(msg.sender, amount);
         payable(msg.sender).transfer(amount * purchaseRatio);
